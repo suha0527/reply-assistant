@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Reply Assistant — AI replies in one click</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f7f3ec;color:#1a1610;overflow-x:hidden}
+:root{
+  --gold:#c8a96e;--gold2:#e2c992;--goldd:#8a7040;
+  --ink:#0a0906;--paper:#f7f3ec;--paper2:#ede8df;
+  --muted:#7a7060;--serif:Georgia,'Times New Roman',serif;
+}
+nav{position:fixed;top:0;left:0;right:0;z-index:300;display:flex;align-items:center;justify-content:space-between;padding:14px 40px;background:rgba(247,243,236,0.94);backdrop-filter:blur(10px);border-bottom:1px solid rgba(200,169,110,0.18)}
+.nav-brand{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none}
+.nav-brand-icon{width:30px;height:30px;background:var(--ink);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-brand-name{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink)}
+.nav-menu{display:flex;align-items:center;gap:28px;list-style:none}
+.nav-menu a{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;cursor:pointer;transition:color .15s}
+.nav-menu a:hover{color:var(--ink)}
+.nav-btn{padding:8px 20px;background:var(--ink);color:#f7f3ec!important;border-radius:6px;font-size:12px!important;font-weight:700!important;text-transform:uppercase;letter-spacing:.05em!important}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:7px 6px;border:1.5px solid rgba(10,9,6,0.15);border-radius:7px;background:none}
+.hamburger span{display:block;width:20px;height:2px;background:var(--ink);border-radius:2px;transition:all .25s}
+.hamburger.is-open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.is-open span:nth-child(2){opacity:0}
+.hamburger.is-open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.drawer{display:none;position:fixed;top:60px;left:0;right:0;z-index:299;background:rgba(247,243,236,0.98);border-bottom:1px solid rgba(200,169,110,0.18);padding:10px 20px 18px;flex-direction:column}
+.drawer.is-open{display:flex}
+.drawer-link{display:block;padding:13px 8px;font-size:15px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:1px solid rgba(200,169,110,0.1);text-decoration:none}
+.drawer-link:hover{color:var(--ink)}
+.drawer-cta{margin-top:12px;padding:14px;background:var(--ink);color:#f7f3ec;border-radius:8px;text-align:center;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.is-open{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:28px;max-width:440px;width:100%;box-shadow:0 32px 80px rgba(0,0,0,.22)}
+.modal-head{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:14px}
+.modal-url{background:var(--paper);border:1px solid var(--paper2);border-radius:8px;padding:11px 13px;font-family:monospace;font-size:12px;color:var(--ink);word-break:break-all;margin-bottom:16px;line-height:1.5}
+.modal-actions{display:flex;gap:10px}
+.modal-copy{flex:1;padding:11px;background:var(--ink);border:none;border-radius:8px;font-size:13px;font-weight:700;color:#f7f3ec;cursor:pointer;transition:background .15s}
+.modal-copy:hover{background:#2a2418}
+.modal-close{padding:11px 18px;border:1.5px solid var(--paper2);border-radius:8px;font-size:13px;font-weight:600;color:var(--muted);background:none;cursor:pointer}
+section{padding:88px 40px}
+.tag{display:block;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--goldd);margin-bottom:12px}
+.sec-title{font-family:var(--serif);font-size:clamp(30px,5vw,52px);font-weight:500;line-height:1.06;letter-spacing:-.02em;color:var(--ink);margin-bottom:52px}
+.sec-title em{font-style:italic;color:var(--goldd)}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:130px 24px 80px;text-align:center;position:relative;overflow:hidden}
+.hero-glow{position:absolute;width:700px;height:700px;background:radial-gradient(circle,rgba(200,169,110,.1) 0%,transparent 70%);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border:1px solid rgba(200,169,110,.22);border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--goldd);background:rgba(200,169,110,.06);margin-bottom:22px}
+.hero-dot{width:5px;height:5px;background:var(--gold);border-radius:50%;animation:blink 2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-h1{font-family:var(--serif);font-size:clamp(46px,9vw,92px);font-weight:500;line-height:.95;letter-spacing:-.025em;color:var(--ink);margin-bottom:12px}
+.hero-h1 em{font-style:italic;color:var(--goldd)}
+.hero-sub{font-family:var(--serif);font-size:clamp(16px,2.5vw,22px);font-style:italic;color:var(--muted);max-width:520px;margin-bottom:34px}
+.hero-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:36px}
+.btn-solid{display:inline-flex;align-items:center;gap:9px;padding:14px 26px;background:var(--ink);color:#f7f3ec;border-radius:7px;font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;border:none;transition:all .18s}
+.btn-solid:hover{background:#2a2418;transform:translateY(-2px)}
+.btn-ghost{display:inline-flex;align-items:center;padding:14px 22px;border:1.5px solid rgba(10,9,6,.14);border-radius:7px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;background:none;transition:all .18s}
+.btn-ghost:hover{border-color:var(--ink);color:var(--ink)}
+.hero-platforms{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}
+.plat-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.plat-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.plat-pill{display:flex;align-items:center;gap:6px;padding:5px 12px;background:#fff;border:1px solid var(--paper2);border-radius:20px;font-size:11px;font-weight:600;color:var(--muted);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.demo-sec{background:var(--paper2);text-align:center}
+.demo-sec .sec-title{margin-bottom:32px}
+.how-sec{background:var(--ink)}
+.how-sec .tag{color:var(--gold)}
+.how-sec .sec-title{color:#f7f3ec}
+.how-sec .sec-title em{color:var(--gold)}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}
+.step-card{padding:34px 30px;background:#100e0b;border:1px solid #1e1b14;position:relative;transition:background .18s}
+.step-card:hover{background:#161310}
+.step-card:first-child{border-radius:12px 0 0 12px}
+.step-card:last-child{border-radius:0 12px 12px 0}
+.step-num{font-family:var(--serif);font-size:62px;color:rgba(200,169,110,.1);position:absolute;top:14px;right:18px;line-height:1}
+.step-ico{width:40px;height:40px;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.2);border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:16px}
+.step-card h3{font-size:15px;font-weight:700;color:#f7f3ec;margin-bottom:8px}
+.step-card p{font-size:13px;color:#6a6050;line-height:1.6}
+.feat-sec{background:var(--paper)}
+.feats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2px}
+.feat-card{padding:30px;background:#fff;border:1px solid var(--paper2);transition:box-shadow .18s}
+.feat-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.06)}
+.feat-card:nth-child(1){border-radius:12px 0 0 0}
+.feat-card:nth-child(2){border-radius:0 12px 0 0}
+.feat-card:nth-child(3){border-radius:0 0 0 12px}
+.feat-card:nth-child(4){border-radius:0 0 12px 0}
+.feat-ico{width:38px;height:38px;background:var(--paper2);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:13px}
+.feat-card h3{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:7px}
+.feat-card p{font-size:13px;color:var(--muted);line-height:1.62}
+.install-sec{background:var(--ink)}
+.install-sec .tag{color:var(--gold)}
+.install-sec .sec-title{color:#f7f3ec}
+.install-sec .sec-title em{color:var(--gold)}
+.install-layout{display:grid;grid-template-columns:1fr 270px;gap:48px;align-items:start}
+.install-steps{display:flex;flex-direction:column;gap:2px}
+.i-step{padding:26px 28px;background:#100e0b;border:1px solid #1e1b14;position:relative}
+.i-step:first-child{border-radius:12px 12px 0 0}
+.i-step:last-child{border-radius:0 0 12px 12px}
+.i-step-n{font-family:var(--serif);font-size:50px;color:rgba(200,169,110,.1);position:absolute;top:10px;right:14px;line-height:1}
+.i-step-ico{width:36px;height:36px;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.i-step h3{font-size:14px;font-weight:700;color:#f7f3ec;margin-bottom:6px}
+.i-step p{font-size:12px;color:#6a6050;line-height:1.6}
+.i-step a{color:var(--gold);cursor:pointer;font-weight:600}
+.install-note{margin-top:18px;font-size:12px;color:#3a3628}
+.install-note a{color:var(--gold);cursor:pointer;font-weight:600}
+.popup-preview{background:#0f0d0a;border-radius:14px;border:1px solid rgba(200,169,110,.14);overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5);position:sticky;top:100px}
+.pp-head{background:#0a0906;padding:11px 13px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #1a1810}
+.pp-ico{width:22px;height:22px;background:#1a1814;border:1px solid #2a2820;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pp-name{font-size:12px;font-weight:700;color:#f7f3ec}
+.pp-ver{margin-left:auto;font-size:9px;color:#3a3628}
+.pp-body{padding:13px}
+.pp-lbl{font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#3a3628;margin-bottom:5px}
+.pp-row{display:flex;gap:6px;margin-bottom:10px}
+.pp-input{flex:1;background:#0a0906;border:1px solid #2a2820;border-radius:5px;padding:7px 9px;font-size:10px;font-family:monospace;color:#6a5a3a}
+.pp-save{padding:7px 11px;background:var(--gold);border:none;border-radius:5px;font-size:10px;font-weight:700;color:var(--ink)}
+.pp-divider{height:1px;background:#1a1810;margin-bottom:10px}
+.pp-status{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.pp-dot{width:6px;height:6px;border-radius:50%;background:#27c93f;flex-shrink:0;animation:blink 2s ease infinite}
+.pp-stxt{font-size:10px;color:#4a4438}
+.pp-tags{display:flex;gap:5px;flex-wrap:wrap}
+.pp-tag{padding:3px 8px;background:#0a0906;border:1px solid rgba(200,169,110,.22);border-radius:20px;font-size:9px;font-weight:600;color:var(--goldd)}
+.pp-caption{font-size:10px;color:#3a3628;text-align:center;margin-top:10px;font-style:italic}
+.price-sec{background:var(--paper2);text-align:center}
+.price-sec .sec-title{margin-bottom:10px}
+.price-desc{font-size:14px;color:var(--muted);margin-bottom:46px}
+.price-row{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;max-width:700px;margin:0 auto}
+.price-card{flex:1;min-width:220px;max-width:310px;background:#fff;border:1px solid var(--paper2);border-radius:14px;padding:30px 26px;text-align:left;position:relative;transition:all .2s}
+.price-card:hover{transform:translateY(-4px);box-shadow:0 20px 48px rgba(0,0,0,.09)}
+.price-card.is-feat{background:var(--ink);border-color:var(--ink)}
+.price-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);padding:4px 13px;background:var(--gold);border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+.price-plan{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.is-feat .price-plan{color:#6a6050}
+.price-amount{font-family:var(--serif);font-size:46px;font-weight:500;line-height:1;color:var(--ink);margin-bottom:4px}
+.is-feat .price-amount{color:#f7f3ec}
+.price-amount sup{font-size:19px;vertical-align:super;font-family:system-ui;font-weight:600}
+.price-period{font-size:12px;color:var(--muted);margin-bottom:18px}
+.is-feat .price-period{color:#6a6050}
+.price-line{height:1px;background:var(--paper2);margin-bottom:16px}
+.is-feat .price-line{background:#1e1b14}
+.price-list{list-style:none;margin-bottom:22px}
+.price-list li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.is-feat .price-list li{color:#9a9080}
+.price-list li::before{content:'✓';width:16px;height:16px;background:rgba(200,169,110,.1);border:1px solid rgba(200,169,110,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--gold);flex-shrink:0}
+.price-btn{display:block;width:100%;padding:12px;border-radius:7px;font-size:13px;font-weight:700;text-align:center;cursor:pointer;transition:all .18s;font-family:system-ui}
+.pbtn-outline{background:transparent;border:1.5px solid rgba(10,9,6,.14);color:var(--ink)}
+.pbtn-outline:hover{border-color:var(--ink)}
+.pbtn-gold{background:var(--gold);border:none;color:var(--ink)}
+.pbtn-gold:hover{background:var(--gold2)}
+.cta-sec{background:var(--ink);text-align:center;position:relative;overflow:hidden;padding:88px 40px}
+.cta-sec::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(200,169,110,.07) 0%,transparent 70%);pointer-events:none}
+.cta-sec .tag{color:var(--gold)}
+.cta-h2{font-family:var(--serif);font-size:clamp(36px,7vw,70px);font-weight:500;line-height:1;letter-spacing:-.02em;color:#f7f3ec;margin-bottom:16px;position:relative}
+.cta-h2 em{font-style:italic;color:var(--gold)}
+.cta-sub{font-size:15px;color:#6a6050;margin-bottom:32px;position:relative}
+.cta-api{margin-top:16px;font-size:13px;color:#4a4438;position:relative}
+.cta-api a{color:var(--gold);font-weight:600;cursor:pointer}
+footer{padding:26px 40px;background:#050403;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #131008;flex-wrap:wrap;gap:12px}
+.foot-name{font-family:var(--serif);font-size:15px;font-weight:600;color:#3a3420}
+.foot-links{display:flex;gap:20px}
+.foot-links a{font-size:11px;color:#3a3420;cursor:pointer;transition:color .15s;text-decoration:none}
+.foot-links a:hover{color:var(--gold)}
+.foot-copy{font-size:11px;color:#252015}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .55s ease,transform .55s ease}
+.reveal.visible{opacity:1;transform:none}
+@media(max-width:860px){.install-layout{grid-template-columns:1fr}.popup-preview{display:none}}
+@media(max-width:640px){
+  nav{padding:12px 16px}
+  section{padding:64px 18px}
+  .hero{padding:110px 18px 64px}
+  .cta-sec{padding:64px 18px}
+  .steps-grid{grid-template-columns:1fr}
+  .step-card:first-child{border-radius:12px 12px 0 0}
+  .step-card:last-child{border-radius:0 0 12px 12px}
+  .feats-grid{grid-template-columns:1fr}
+  .feat-card:nth-child(1){border-radius:12px 12px 0 0}
+  .feat-card:nth-child(2){border-radius:0}
+  .feat-card:nth-child(3){border-radius:0}
+  .feat-card:nth-child(4){border-radius:0 0 12px 12px}
+  footer{flex-direction:column;text-align:center}
+  .foot-links{justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <p class="modal-head" id="modalTitle"></p>
+    <p class="modal-sub">Copy this URL and open it in your browser</p>
+    <div class="modal-url" id="modalUrl"></div>
+    <div class="modal-actions">
+      <button class="modal-copy" id="modalCopyBtn" onclick="doCopy()">Copy URL</button>
+      <button class="modal-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="javascript:void(0)" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <div class="nav-brand-icon">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2.5">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+    </div>
+    <span class="nav-brand-name">Reply Assistant</span>
+  </a>
+  <ul class="nav-menu" id="navMenu">
+    <li><a href="javascript:void(0)" onclick="goTo('how')">How it works</a></li>
+    <li><a href="javascript:void(0)" onclick="goTo('demo')">Demo</a></li>
+    <li><a href="javascript:void(0)" onclick="goTo('features')">Features</a></li>
+    <li><a href="javascript:void(0)" onclick="goTo('install')">Install</a></li>
+    <li><a href="javascript:void(0)" onclick="goTo('pricing')">Pricing</a></li>
+    <li><a href="javascript:void(0)" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')" class="nav-btn">Get Extension</a></li>
+  </ul>
+  <button class="hamburger" id="hamburger" onclick="toggleDrawer()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- DRAWER -->
+<div class="drawer" id="drawer">
+  <a class="drawer-link" href="javascript:void(0)" onclick="drawerNav('how')">How it works</a>
+  <a class="drawer-link" href="javascript:void(0)" onclick="drawerNav('demo')">Demo</a>
+  <a class="drawer-link" href="javascript:void(0)" onclick="drawerNav('features')">Features</a>
+  <a class="drawer-link" href="javascript:void(0)" onclick="drawerNav('install')">Install</a>
+  <a class="drawer-link" href="javascript:void(0)" onclick="drawerNav('pricing')">Pricing</a>
+  <a class="drawer-link" href="javascript:void(0)" onclick="openExt('https://console.anthropic.com','Anthropic Console — Get free API key');closeDrawer()">Get API Key</a>
+  <div class="drawer-cta" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store');closeDrawer()">Get Extension</div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-badge"><div class="hero-dot"></div>Chrome Extension · Powered by Claude AI</div>
+  <h1 class="hero-h1">Write better replies,<br><em>in one click.</em></h1>
+  <p class="hero-sub">AI-crafted responses for Gmail, LinkedIn &amp; Twitter — in your voice.</p>
+  <div class="hero-btns">
+    <button class="btn-solid" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Add to Chrome — Free
+    </button>
+    <button class="btn-ghost" onclick="goTo('how')">See how it works →</button>
+  </div>
+  <div class="hero-platforms">
+    <span class="plat-lbl">Works on</span>
+    <div class="plat-row">
+      <div class="plat-pill"><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#ea4335"/></svg>Gmail</div>
+      <div class="plat-pill"><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#0077b5"/></svg>LinkedIn</div>
+      <div class="plat-pill"><svg width="9" height="9" viewBox="0 0 10 10"><circle cx="5" cy="5" r="5" fill="#1da1f2"/></svg>X / Twitter</div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="demo-sec" id="demo">
+  <span class="tag" style="text-align:center">See it in action</span>
+  <h2 class="sec-title" style="text-align:center">Watch Reply Assistant<br><em>work its magic</em></h2>
+  <div style="max-width:480px;margin:0 auto;text-align:center">
+    <button id="loomCopyBtn" onclick="copyLoom()" style="display:inline-flex;align-items:center;gap:10px;padding:16px 32px;background:var(--ink);color:#f7f3ec;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:16px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="#625DF5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="white"/></svg>
+      Watch Loom Demo
+    </button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--paper2);border:1px solid rgba(200,169,110,.2);border-radius:8px;padding:11px 16px;margin-bottom:12px;flex-wrap:wrap">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--goldd)" stroke-width="2"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+      <span style="font-family:monospace;font-size:12px;color:var(--ink);word-break:break-all">https://www.loom.com/share/0116399b483440a68a18a4f0408945bc</span>
+    </div>
+    <p style="font-size:13px;color:var(--muted)">&#9432; Copy the link and paste it into your browser to watch the demo.</p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how-sec" id="how">
+  <span class="tag">How it works</span>
+  <h2 class="sec-title">Three steps to a <em>perfect reply</em></h2>
+  <div class="steps-grid">
+    <div class="step-card reveal">
+      <div class="step-num">01</div>
+      <div class="step-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+      <h3>Open any reply box</h3>
+      <p>Visit Gmail, LinkedIn, or X. Click into any reply box and Reply Assistant appears automatically below it.</p>
+    </div>
+    <div class="step-card reveal" style="transition-delay:.1s">
+      <div class="step-num">02</div>
+      <div class="step-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg></div>
+      <h3>Pick your tone</h3>
+      <p>Choose Professional, Friendly, Concise, Witty, or Empathetic. Claude crafts your reply in under 3 seconds.</p>
+    </div>
+    <div class="step-card reveal" style="transition-delay:.2s">
+      <div class="step-num">03</div>
+      <div class="step-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <h3>Insert &amp; send</h3>
+      <p>Click "Insert into reply" and it drops straight into your compose box. Regenerate anytime for a different angle.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="feat-sec" id="features">
+  <span class="tag">Features</span>
+  <h2 class="sec-title">Everything you need to<br><em>reply like a pro</em></h2>
+  <div class="feats-grid">
+    <div class="feat-card reveal">
+      <div class="feat-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <h3>Instant generation</h3>
+      <p>Replies appear in under 3 seconds powered by Claude. No loading screens, no waiting.</p>
+    </div>
+    <div class="feat-card reveal" style="transition-delay:.1s">
+      <div class="feat-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg></div>
+      <h3>5 distinct tones</h3>
+      <p>Switch between Professional, Friendly, Concise, Witty, and Empathetic for every situation.</p>
+    </div>
+    <div class="feat-card reveal" style="transition-delay:.05s">
+      <div class="feat-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+      <h3>Your key, your data</h3>
+      <p>Your Anthropic API key stays only on your device. We never see your messages. Zero data retention.</p>
+    </div>
+    <div class="feat-card reveal" style="transition-delay:.15s">
+      <div class="feat-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+      <h3>Context-aware</h3>
+      <p>Reads the message you're replying to and crafts a genuinely relevant response — not generic filler.</p>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="install-sec" id="install">
+  <span class="tag">Installation</span>
+  <h2 class="sec-title">Add to Chrome in <em>60 seconds</em></h2>
+  <div class="install-layout">
+    <div>
+      <div class="install-steps">
+        <div class="i-step reveal">
+          <div class="i-step-n">01</div>
+          <div class="i-step-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+          <h3>Visit the Chrome Web Store</h3>
+          <p>Click <a href="javascript:void(0)" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')">here to open Reply Assistant</a> on the Chrome Web Store and click <em style="color:#9a9080">Add to Chrome</em>.</p>
+        </div>
+        <div class="i-step reveal" style="transition-delay:.1s">
+          <div class="i-step-n">02</div>
+          <div class="i-step-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
+          <h3>Pin it &amp; add your API key</h3>
+          <p>Click 🧩 in Chrome's toolbar, pin Reply Assistant, then paste your key from <a href="javascript:void(0)" onclick="openExt('https://console.anthropic.com','Anthropic Console — Get free API key')">console.anthropic.com</a>.</p>
+        </div>
+        <div class="i-step reveal" style="transition-delay:.2s">
+          <div class="i-step-n">03</div>
+          <div class="i-step-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h3>Start replying smarter</h3>
+          <p>Open Gmail, LinkedIn, or X. Click any reply box — Reply Assistant appears. Pick a tone, generate, insert. Done.</p>
+        </div>
+      </div>
+      <p class="install-note">⚡ Need an API key? <a href="javascript:void(0)" onclick="openExt('https://console.anthropic.com','Anthropic Console — Get free API key')">Get one free at console.anthropic.com →</a></p>
+    </div>
+    <div>
+      <div class="popup-preview">
+        <div class="pp-head">
+          <div class="pp-ico"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+          <span class="pp-name">Reply Assistant</span><span class="pp-ver">v1.0.0</span>
+        </div>
+        <div class="pp-body">
+          <div class="pp-lbl">Anthropic API Key</div>
+          <div class="pp-row">
+            <div class="pp-input">sk-ant-api03-••••••••</div>
+            <button class="pp-save">Save</button>
+          </div>
+          <div class="pp-divider"></div>
+          <div class="pp-status"><div class="pp-dot"></div><span class="pp-stxt">Connected · Ready to reply</span></div>
+          <div class="pp-tags">
+            <span class="pp-tag">Gmail ✓</span>
+            <span class="pp-tag">LinkedIn ✓</span>
+            <span class="pp-tag">X ✓</span>
+          </div>
+        </div>
+      </div>
+      <p class="pp-caption">What you'll see after installing</p>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="price-sec" id="pricing">
+  <span class="tag" style="text-align:center;display:block">Pricing</span>
+  <h2 class="sec-title">Simple, <em>honest</em> pricing</h2>
+  <p class="price-desc">Bring your own API key. You only pay Anthropic for what you use — typically pennies per day.</p>
+  <div class="price-row">
+    <div class="price-card reveal">
+      <div class="price-plan">Starter</div>
+      <div class="price-amount"><sup>$</sup>0</div>
+      <div class="price-period">Free forever</div>
+      <div class="price-line"></div>
+      <ul class="price-list">
+        <li>Gmail support</li>
+        <li>3 tone options</li>
+        <li>10 replies / day</li>
+        <li>Your own API key</li>
+      </ul>
+      <button class="price-btn pbtn-outline" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')">Download Free</button>
+    </div>
+    <div class="price-card is-feat reveal" style="transition-delay:.1s">
+      <div class="price-badge">Most Popular</div>
+      <div class="price-plan">Pro</div>
+      <div class="price-amount"><sup>$</sup>7</div>
+      <div class="price-period">per month</div>
+      <div class="price-line"></div>
+      <ul class="price-list">
+        <li>Gmail + LinkedIn + X</li>
+        <li>All 5 tone options</li>
+        <li>Unlimited replies</li>
+        <li>Your own API key</li>
+        <li>Priority support</li>
+      </ul>
+      <button class="price-btn pbtn-gold" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')">Get Pro Access</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <span class="tag">Get started today</span>
+  <h2 class="cta-h2">Stop staring at<br>a <em>blank reply box.</em></h2>
+  <p class="cta-sub">Join thousands of professionals who reply faster, smarter, better.</p>
+  <button class="btn-solid" style="margin:0 auto" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Add to Chrome — It's Free
+  </button>
+  <p class="cta-api">Need an API key? <a href="javascript:void(0)" onclick="openExt('https://console.anthropic.com','Anthropic Console — Get free API key')">Get one free at console.anthropic.com →</a></p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-name">Reply Assistant</div>
+  <div class="foot-links">
+    <a href="javascript:void(0)" onclick="openExt(STORE,'Reply Assistant on Chrome Web Store')">Chrome Web Store</a>
+    <a href="javascript:void(0)" onclick="openExt('https://console.anthropic.com','Anthropic Console')">Get API Key</a>
+    <a href="javascript:void(0)" onclick="goTo('pricing')">Pricing</a>
+  </div>
+  <div class="foot-copy">© 2026 Reply Assistant. Built with Claude AI.</div>
+</footer>
+
+<script>
+var STORE = 'https://chromewebstore.google.com/detail/reply-assistant/blmlplldlnhpkipcnnfhikhmiepbpolh';
+var LOOM  = 'https://www.loom.com/share/0116399b483440a68a18a4f0408945bc';
+
+function openExt(url, title) {
+  document.getElementById('modalTitle').textContent = title || url;
+  document.getElementById('modalUrl').textContent = url;
+  document.getElementById('modal').classList.add('is-open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('is-open');
+  var btn = document.getElementById('modalCopyBtn');
+  btn.textContent = 'Copy URL';
+  btn.style.background = '';
+  btn.style.color = '';
+}
+function doCopy() {
+  var url = document.getElementById('modalUrl').textContent;
+  var btn = document.getElementById('modalCopyBtn');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(function() { showCopied(btn); }).catch(function() { fallbackCopy(url, btn); });
+  } else { fallbackCopy(url, btn); }
+}
+function fallbackCopy(text, btn) {
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); showCopied(btn); } catch(e) {
+    var urlEl = document.getElementById('modalUrl');
+    urlEl.style.background = '#fff3cd'; urlEl.style.border = '2px solid #c8a96e';
+    var range = document.createRange(); range.selectNodeContents(urlEl);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    btn.textContent = 'Press Ctrl+C / Cmd+C'; btn.style.background = '#c8a96e'; btn.style.color = '#0a0906';
+  }
+  document.body.removeChild(ta);
+}
+function showCopied(btn) {
+  btn.textContent = 'Copied!'; btn.style.background = '#27c93f';
+  setTimeout(function() { btn.textContent = 'Copy URL'; btn.style.background = ''; }, 2000);
+}
+
+function copyLoom() {
+  var btn = document.getElementById('loomCopyBtn');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(LOOM).then(function() { loomCopied(btn); }).catch(function() { loomFallback(btn); });
+  } else { loomFallback(btn); }
+}
+function loomFallback(btn) {
+  var ta = document.createElement('textarea');
+  ta.value = LOOM; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.focus(); ta.select();
+  try { document.execCommand('copy'); loomCopied(btn); } catch(e) { btn.textContent = 'Press Ctrl+C'; }
+  document.body.removeChild(ta);
+}
+function loomCopied(btn) {
+  btn.textContent = '✓ Link Copied!'; btn.style.background = '#27c93f';
+  setTimeout(function() {
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="#625DF5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="white"/></svg> Watch Loom Demo';
+    btn.style.background = '';
+  }, 2500);
+}
+
+function goTo(id) {
+  var el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function toggleDrawer() {
+  document.getElementById('hamburger').classList.toggle('is-open');
+  document.getElementById('drawer').classList.toggle('is-open');
+}
+function closeDrawer() {
+  document.getElementById('hamburger').classList.remove('is-open');
+  document.getElementById('drawer').classList.remove('is-open');
+}
+function drawerNav(id) {
+  closeDrawer();
+  setTimeout(function() { goTo(id); }, 120);
+}
+function updateNav() {
+  var burger = document.getElementById('hamburger');
+  var menu = document.getElementById('navMenu');
+  if (window.innerWidth < 768) {
+    burger.style.display = 'flex'; menu.style.display = 'none';
+  } else {
+    burger.style.display = 'none'; menu.style.display = 'flex'; closeDrawer();
+  }
+}
+updateNav();
+window.addEventListener('resize', updateNav);
+
+var obs = new IntersectionObserver(function(entries) {
+  entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.12 });
+document.querySelectorAll('.reveal').forEach(function(el) { obs.observe(el); });
+</script>
+</body>
+</html>
